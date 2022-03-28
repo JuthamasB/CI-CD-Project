@@ -8,17 +8,17 @@ pipeline {
     stage('Prepare Test') {
       steps {
         echo "Running ${env.BUILD_ID} on ${env.JENKINS_URL}"
-        dir(path: '/root/kube-me') {
+        dir(path: '/root/CI-CD-Project') {
           echo 'Git Check out to Branch: dev'
           sh 'git checkout dev'
-          echo 'Pull latest code from WarotAsawa/kube-me Branch: dev'
+          echo 'Pull latest code from JuthamasB/CI-CD-Project Branch: dev'
           sh 'git pull'
         }
       }
     }
     stage('Build Test') {
       steps {
-        dir(path: '/root/kube-me') {
+        dir(path: '/root/CI-CD-Project') {
           echo 'Building temp docker image'
           sh 'docker build -t temp-kube-me:dev .'
         }
@@ -26,7 +26,7 @@ pipeline {
     }
     stage('Run Test') {
       steps {
-        dir(path: '/root/kube-me') {
+        dir(path: '/root/CI-CD-Project') {
           echo 'Clean up leftover container'
           sh 'docker stop tempweb || true'
           echo "Running temp docker image with port ${params.TEST_PORT}"
@@ -45,7 +45,7 @@ pipeline {
     }
     stage('Build Prod') {
       steps {
-        dir(path: '/root/kube-me') {
+        dir(path: '/root/CI-CD-Project') {
           echo 'Merge to master and push'
           sh 'git checkout master'
           sh 'git merge dev'
@@ -53,15 +53,15 @@ pipeline {
           echo 'Checkout git back to dev branch'
           sh 'git checkout dev'
           echo 'Building production docker image'
-          sh 'docker build -t asawakow/kube-me:dev .'
+          sh 'docker build -t chocobrown0305/kube-me:dev .'
           echo 'Push Image to docker.hub'
-          sh 'docker push asawakow/kube-me:dev'
+          sh 'docker push chocobrown0305/kube-me:dev'
         }
       }
     }
     stage('Deploy Prod on k8s') {
       steps {
-        dir(path: '/root/kube-me/src/kubectl') {
+        dir(path: '/root/CI-CD-Project/src/kubectl') {
           echo 'Sleep 15s for docker hub to ready'
           sleep(time: 15, unit: 'SECONDS')
           echo 'Re-deployging Web-App'
@@ -86,9 +86,9 @@ pipeline {
     }
   }
   parameters {
-    string(name: 'TEST_HOST', defaultValue: 'gotham-ci.hpe.lab', description: 'URL for docker testing')
+    string(name: 'TEST_HOST', defaultValue: '172.30.5.233', description: 'URL for docker testing')
     string(name: 'TEST_PORT', defaultValue: '3000', description: 'Port for testing')
-    string(name: 'BROWSER_HOST', defaultValue: 'gotham-ci.hpe.lab', description: 'URL for Selenium Remote Web Driver')
+    string(name: 'BROWSER_HOST', defaultValue: '172.30.5.233', description: 'URL for Selenium Remote Web Driver')
     string(name: 'BROWSER_PORT', defaultValue: '4444', description: 'Port for Selenium Remote Web Driver')
     string(name: 'PROD_HOST', defaultValue: 'kube-me-ci.ezmeral.hpe.lab', description: 'URL for production endpoint testing')
     string(name: 'PROD_PORT', defaultValue: '80', description: 'Port for production')
