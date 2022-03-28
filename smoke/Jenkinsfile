@@ -1,0 +1,53 @@
+pipeline {
+	/*
+	Prepare: Pull Code from Git (dev banch), build temp docker image. 
+	Test: Test code on Docker and if pass
+	Result: IF Pass then merge code to master, go to BUILD.
+	IF Failed. Do nothing
+	Build: build production docker image. Push new image to hub
+	Deploy: kubectl apply changed deployment
+	*/
+
+	//Run only on dev-node slave
+	agent { label 'gotham-ci'}
+	parameters {
+		string(name: 'TEST_HOST', defaultValue: 'gotham-ci.hpe.lab', description: 'URL for docker testing')
+		string(name: 'TEST_PORT', defaultValue: '3001', description: 'Port for testing')
+		string(name: 'BROWSER_HOST', defaultValue: "gotham-ci.hpe.lab", description: 'URL for Selenium Remote Web Driver')
+		string(name: 'BROWSER_PORT', defaultValue: '4444', description: 'Port for Selenium Remote Web Driver')
+		string(name: 'PROD_HOST', defaultValue: 'k8s-7.ezmeral.hpe.lab', description: 'URL for production endpoint testing')
+		string(name: 'PROD_PORT', defaultValue: '30555', description: 'Port for production')
+	}
+	stages {
+		stage('Preparing Smoke Test') {
+			steps {
+				echo "Running ${env.BUILD_ID} on ${env.JENKINS_URL}"
+				dir('/root/kube-me') {
+					echo "Git Check out to Branch: dev"
+					sh "git checkout dev"
+					echo "Pull latest code from WarotAsawa/kube-me Branch: dev"
+					sh "git pull"
+				}
+			}
+		}
+		stage('Running Smoke Test') {
+			steps {
+				dir('/root/kube-me') {
+					echo "Clean up leftover container"
+					sh "docker stop smoke-tester || true"
+					echo "Running temp docker image with port ${params.TEST_PORT}"
+					sh "docker run --name smoke-tester --rm -d -p ${params.TEST_PORT}:3000 temp-kube-me:dev"
+					echo "Waiting for NodeJS Service to be Ready"
+					sleep(time: 30, unit: "SECONDS")
+					retry(3) {
+						sleep(time: 10, unit: "SECONDS")
+						echo "Test web functionalities"
+						sh "docker exec -i smoke-tester npm test ./test/Smoke.test.js"
+					}
+					echo "Test Pass. Cleaning up containers"
+					sh "docker stop smoke-tester"
+				}
+			}
+		}
+	}
+}

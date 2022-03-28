@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-me-dev
+  labels:
+    app: kube-me-dev
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: kube-me-dev
+  template:
+    metadata:
+      labels:
+        app: kube-me-dev
+    spec:
+      containers:
+        - name: kube-me-dev
+          image: asawakow/kube-me:dev
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 400m
+              memory: 512Mi
+          ports:
+            - name: http-kube-me-ci
+              containerPort: 3000
+              protocol: TCP
+
