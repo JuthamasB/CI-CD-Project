@@ -30,7 +30,7 @@ pipeline {
           echo 'Clean up leftover container'
           sh 'docker stop tempweb || true'
           echo "Running temp docker image with port ${params.TEST_PORT}"
-          sh "docker run --name tempweb --rm -d -p ${params.TEST_PORT}:3000 temp-kube-me:dev -e TEST_HOST=${params.TEST_HOST} -e TEST_PORT=${params.TEST_PORT} -e BROWSER_HOST=${params.BROWSER_HOST} -e BROWSER_PORT=${params.BROWSER_PORT}"
+          sh "docker run --name tempweb --rm -d -p ${params.TEST_PORT}:3000 -e TEST_HOST=${params.TEST_HOST} -e TEST_PORT=${params.TEST_PORT} -e BROWSER_HOST=${params.BROWSER_HOST} -e BROWSER_PORT=${params.BROWSER_PORT}  temp-kube-me:dev"
           echo 'Waiting for NodeJS Service to be Ready'
           sleep(time: 30, unit: 'SECONDS')
           retry(count: 3) {
@@ -46,8 +46,8 @@ pipeline {
     stage('Build Prod') {
       steps {
         dir(path: '/root/CI-CD-Project') {
-          echo 'Merge to master and push'
-          sh 'git checkout master'
+          echo 'Merge to main and push'
+          sh 'git checkout main'
           sh 'git merge dev'
           sh 'git push'
           echo 'Checkout git back to dev branch'
@@ -91,6 +91,7 @@ pipeline {
     string(name: 'BROWSER_HOST', defaultValue: '172.30.5.233', description: 'URL for Selenium Remote Web Driver')
     string(name: 'BROWSER_PORT', defaultValue: '4444', description: 'Port for Selenium Remote Web Driver')
     string(name: 'PROD_HOST', defaultValue: 'kube-me-ci.ezmeral.hpe.lab', description: 'URL for production endpoint testing')
-    string(name: 'PROD_PORT', defaultValue: '80', description: 'Port for production')
+    string(name: 'PROD_PORT', defaultValue: '30555', description: 'Port for production')
   }
 }
+
